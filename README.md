@@ -11,7 +11,7 @@ A free tactical shooter that runs in your browser. No install, no download: open
 - **Competitive mode** with placement matches, ranks from Copper to Apex, RR and match history.
 - **Smart bots** that play the objective, call out enemies, use utility and get tougher as you rank up.
 - **The Range** for aim practice, with accuracy, headshot, reaction time and time-to-kill stats.
-- **Online multiplayer parties** for up to 10 players, with bots filling empty slots.
+- **Online multiplayer parties** for up to 10 players, ranked or unrated, with bots filling empty slots. Everyone's own rank moves after ranked party matches.
 - **Valorant-style sensitivity** conversion, 103° FOV, raw mouse input and a dot crosshair.
 
 ## Controls
