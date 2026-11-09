@@ -333,7 +333,7 @@ b.code{display:block;font-family:var(--display);font-size:44px;letter-spacing:.2
       <kbd>Mouse</kbd><span>Aim · Left click fire · Right click scope (Longreach)</span>
       <kbd>Q E X</kbd><span>Abilities · X is your ultimate, charged by kills and rounds</span>
       <kbd>F</kbd><span>Hold to plant (in a site, carrying the Core) or defuse</span>
-      <kbd>R · 1 · 2 · 3</kbd><span>Reload · primary · sidearm · knife (left slash, right stab, double damage from behind)</span>
+      <kbd>R · 1 · 2 · 3</kbd><span>Reload · primary · sidearm · knife (left slash, right stab, double damage from behind, Y to spin)</span>
       <kbd>C · Z</kbd><span>Hold to crouch (steadier aim, silent) · ping a spot for your team</span>
       <kbd>B · Tab</kbd><span>Buy menu: guns, shields, ability charges · scoreboard</span>
       <kbd>Esc</kbd><span>Pause</span>
@@ -706,7 +706,7 @@ const acsOf=a=>Math.round(a.score/Math.max(1,roundsDone()));
 
 // ================= meshes =================
 const vm=new THREE.Group();camera.add(vm);
-let vmGun=null,vmFlash=null,vmKey=null;
+let vmGun=null,vmFlash=null,vmKey=null,vmPiv=null;
 const SKINS={
   stock:{name:'Stock'},
   ember:{name:'Ember',body:0x2a1610,acc:0xff6a2a,glow:0x7a1e00},
@@ -732,7 +732,7 @@ function skinMats(w){const sk=SKINS[G.skin]&&(!SKINS[G.skin].dev||AQ)?SKINS[G.sk
 function buildVM(key){
   if(vmGun)vm.remove(vmGun);vmKey=key;const w=W[key];const g=new THREE.Group();
   const sm=skinMats(w);const mat=sm.body,acc=sm.acc;
-  if(w.melee){const bm=new THREE.MeshLambertMaterial({color:G.skin==='aquas'&&AQ?0xf2e2a0:0xc9d2da,emissive:G.skin==='aquas'&&AQ?0x3a2a00:0x111418,depthTest:false});const kg=new THREE.Group();kg.position.set(.02,-.04,-.22);kg.rotation.set(-.15,.12,.35);kg.scale.setScalar(.8);g.add(kg);const add=(geo,m,x,y,z,rx,ry,rz)=>{const p=new THREE.Mesh(geo,m);p.position.set(x,y,z);p.rotation.set(rx||0,ry||0,rz||0);p.renderOrder=999;kg.add(p);return p;};
+  if(w.melee){const bm=new THREE.MeshLambertMaterial({color:G.skin==='aquas'&&AQ?0xf2e2a0:0xc9d2da,emissive:G.skin==='aquas'&&AQ?0x3a2a00:0x111418,depthTest:false});const kg=new THREE.Group();kg.position.set(.02,-.04,-.22);kg.rotation.set(-.15,.12,.35);kg.scale.setScalar(.8);g.add(kg);const P0=G.knife==='karambit'?[0,-.01,.11]:[0,0,.02];const pv=new THREE.Group();pv.position.set(...P0);kg.add(pv);vmPiv=pv;const add=(geo,m,x,y,z,rx,ry,rz)=>{const p=new THREE.Mesh(geo,m);p.position.set(x-P0[0],y-P0[1],z-P0[2]);p.rotation.set(rx||0,ry||0,rz||0);p.renderOrder=999;pv.add(p);return p;};
     add(new THREE.BoxGeometry(.045,.05,.14),mat,0,0,.02);
     if(G.knife==='karambit'){add(new THREE.TorusGeometry(.035,.009,6,14),acc,0,-.01,.11,0,Math.PI/2,0);for(let i=0;i<7;i++){const a=i/6*1.25;add(new THREE.BoxGeometry(.012,.03-i*.0025,.045),bm,0,.012+Math.sin(a)*.09-(1-Math.cos(a))*.02,-.06-Math.sin(a)*.05-i*.012,-a*.9);}}
     else{add(new THREE.BoxGeometry(.06,.016,.02),acc,0,0,-.055);add(new THREE.BoxGeometry(.012,.04,.2),bm,0,.004,-.165);add(new THREE.BoxGeometry(.012,.02,.05),bm,0,.014,-.285,.5);}
@@ -859,7 +859,7 @@ function shoot(a){
   return true;
 }
 function melee(a,heavy){
-  const w=W.knife;a.cd=heavy?1:1/w.rate;a.swingT=.22;a.swingH=heavy;const o=eyePos(a),f=fwd(a.yaw,a.pitch);let best=null,bd=2.5;
+  const w=W.knife;a.inspT=0;a.cd=heavy?1:1/w.rate;a.swingT=.22;a.swingH=heavy;const o=eyePos(a),f=fwd(a.yaw,a.pitch);let best=null,bd=2.5;
   for(const t of agents){if(!t.alive||t.team===a.team||t===a)continue;const c=chestPos(t),v=c.clone().sub(o);const d=v.length();if(d>bd)continue;v.normalize();if(f.dot(v)<.72||!clearLine(o,c))continue;bd=d;best=t;}
   if(a.isPlayer)sfx('slash');
   if(best){const back=Math.cos(best.yaw-a.yaw)>.5;const dmg=(heavy?75:50)*(back?2:1);G.inShot=true;damage(best,dmg,a,false,'Knife');G.inShot=false;spark(chestPos(best),0xff5a3c,.08);if(a.isPlayer&&!NET.client)hitmark(back);}
@@ -1852,6 +1852,7 @@ addEventListener('keydown',e=>{
   if(e.code==='KeyR')startReload(P);
   if(e.code==='Digit1'&&P.primary&&P.slot!==1){P.slot=1;P.reload=0;P.zoom=false;buildVM(wkey(P));}
   if(e.code==='Digit2'&&P.slot!==2){P.slot=2;P.reload=0;P.zoom=false;buildVM(wkey(P));}
+  if(e.code==='KeyY'&&P.slot===3&&P.alive&&!(P.inspT>0)){P.inspT=1.2;sfx('slash',.4);}
   if(e.code==='Digit3'&&P.slot!==3){P.slot=3;P.reload=0;P.zoom=false;P.autoReloadT=0;if(!P.ammo.knife)P.ammo.knife={mag:1,res:0};buildVM(wkey(P));}
   if(e.code==='KeyB')openBuy();
   if(e.code==='KeyZ')ping();
@@ -2048,7 +2049,7 @@ function update(dt){
   const zf=P.zoom&&P.alive?(W[wkey(P)].zoom||1):1;const fov=2*Math.atan(Math.tan(BASEV*Math.PI/360)/zf)*180/Math.PI;if(Math.abs(camera.fov-fov)>.1){camera.fov+=(fov-camera.fov)*Math.min(1,dt*18);camera.updateProjectionMatrix();}
   muzzleLight.intensity*=Math.pow(1e-5,dt);
   if(vmGun){
-    if(va&&va.isPlayer){if(vmKey!==wkey(P))buildVM(wkey(P));vmGun.visible=!P.zoom;vmGun.position.z+=(-.35-vmGun.position.z)*Math.min(1,dt*14);vmGun.position.x=.22+Math.cos(bob*.5)*.012;vmGun.position.y=-.2+Math.abs(Math.sin(bob*.5))*.012-(P.reload>0?.12:0)-(P.planting>0?.3:0);vmGun.rotation.x=P.reload>0?-.5:0;vmGun.rotation.z=0;if(P.swingT>0){P.swingT-=dt;const q=Math.sin((1-P.swingT/.22)*Math.PI);if(P.swingH){vmGun.position.z-=q*.22;}else{vmGun.rotation.z=q*1.1;vmGun.rotation.x=-q*.6;vmGun.position.x-=q*.12;}}vmFlash.material.opacity*=.5;
+    if(va&&va.isPlayer){if(vmKey!==wkey(P))buildVM(wkey(P));vmGun.visible=!P.zoom;vmGun.position.z+=(-.35-vmGun.position.z)*Math.min(1,dt*14);vmGun.position.x=.22+Math.cos(bob*.5)*.012;vmGun.position.y=-.2+Math.abs(Math.sin(bob*.5))*.012-(P.reload>0?.12:0)-(P.planting>0?.3:0);vmGun.rotation.x=P.reload>0?-.5:0;vmGun.rotation.z=0;if(P.swingT>0){P.swingT-=dt;const q=Math.sin((1-P.swingT/.22)*Math.PI);if(P.swingH){vmGun.position.z-=q*.22;}else{vmGun.rotation.z=q*1.1;vmGun.rotation.x=-q*.6;vmGun.position.x-=q*.12;}}if(P.inspT>0&&P.slot===3){P.inspT-=dt;const q=1-P.inspT/1.2,e=q<.5?2*q*q:1-Math.pow(2-2*q,2)/2;if(vmPiv){if(G.knife==='karambit')vmPiv.rotation.x=-e*Math.PI*4;else{vmPiv.rotation.z=e*Math.PI*2;vmGun.position.y+=.04*Math.sin(q*Math.PI);}}}else if(vmPiv)vmPiv.rotation.set(0,0,0);vmFlash.material.opacity*=.5;
       if(aquaTex)aquaTex.offset.x=(aquaTex.offset.x+dt*.12)%1;}
     else vmGun.visible=false;
   }
