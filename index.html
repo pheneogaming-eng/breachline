@@ -642,8 +642,8 @@ let R={pts:0,placed:0,pw:0,pacs:0,history:[],peak:0};
 try{const s=JSON.parse(localStorage.getItem(RKEY)||'null');if(s&&typeof s.pts==='number')R=Object.assign(R,s);}catch(e){}
 function saveR(){try{localStorage.setItem(RKEY,JSON.stringify(R));}catch(e){}}
 let AIMON=false;try{AIMON=localStorage.getItem('bl-tn')==='1';}catch(e){}
-function applyRankHash(){let ch=false;if(location.hash==='#aquas'&&!AQ){AQ=true;try{localStorage.setItem('bl-aq','1');}catch(e){}if(blReady){G.skin='aquas';renderSkins();applySettings(true);}else AQnew=true;}if(location.hash==='#tune'){AIMON=true;try{localStorage.setItem('bl-tn','1');}catch(e){}}else if(location.hash==='#tune-off'){AIMON=false;try{localStorage.removeItem('bl-tn');}catch(e){}}if(location.hash==='#apex'&&(R.pts<2500||R.placed<3)){R.pts=Math.max(R.pts,2500);R.placed=Math.max(3,R.placed);R.peak=Math.max(R.peak,R.pts);saveR();ch=true;}
-  else if(location.hash==='#unranked'&&(R.placed>0||R.pts>0)){R={pts:0,placed:0,pw:0,pacs:0,history:[],peak:0};saveR();ch=true;}return ch;}
+function applyRankHash(){let ch=false;const HS=location.hash.slice(1).split('+'),hh=x=>HS.includes(x);if(hh('aquas')&&!AQ){AQ=true;try{localStorage.setItem('bl-aq','1');}catch(e){}if(blReady){G.skin='aquas';renderSkins();applySettings(true);}else AQnew=true;}if(hh('tune')){AIMON=true;try{localStorage.setItem('bl-tn','1');}catch(e){}}else if(hh('tune-off')){AIMON=false;try{localStorage.removeItem('bl-tn');}catch(e){}}if(hh('apex')&&(R.pts<2500||R.placed<3)){R.pts=Math.max(R.pts,2500);R.placed=Math.max(3,R.placed);R.peak=Math.max(R.peak,R.pts);saveR();ch=true;}
+  else if(hh('unranked')&&(R.placed>0||R.pts>0)){R={pts:0,placed:0,pw:0,pacs:0,history:[],peak:0};saveR();ch=true;}return ch;}
 applyRankHash();
 addEventListener('hashchange',()=>{if(applyRankHash()&&typeof renderRankPanel==='function')renderRankPanel();});
 function drawEmblem(cv,pts,unranked){
