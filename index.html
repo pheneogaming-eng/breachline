@@ -267,7 +267,7 @@ b.code{display:block;font-family:var(--display);font-size:44px;letter-spacing:.2
 <div class="screen" id="menu">
   <div class="card wide">
     <h1>Breach<span>line</span></h1>
-    <div class="lbl" style="margin-top:6px">Version 2.0 · ranked parties</div>
+    <div class="lbl" style="margin-top:6px">Version 2.1 · ranked parties</div>
     <p>5v5 attack and defense on three maps. Attackers plant the Core on site A or B; defenders stop them or defuse it.</p>
     <div class="tabs" id="modeTabs"><button data-m="ranked" class="on">Competitive</button><button data-m="unrated">Unrated</button><button data-m="range">Range</button><button data-m="mp">Multiplayer</button></div>
     <div class="panel" id="rankedPanel">
@@ -630,8 +630,10 @@ const RKEY='bl-rank-v1';
 let R={pts:0,placed:0,pw:0,pacs:0,history:[],peak:0};
 try{const s=JSON.parse(localStorage.getItem(RKEY)||'null');if(s&&typeof s.pts==='number')R=Object.assign(R,s);}catch(e){}
 function saveR(){try{localStorage.setItem(RKEY,JSON.stringify(R));}catch(e){}}
-if(location.hash==='#apex'&&R.pts<2500){R.pts=2500;R.placed=Math.max(3,R.placed);R.peak=Math.max(R.peak,2500);saveR();}
-if(location.hash==='#unranked'&&(R.placed>0||R.pts>0)){R={pts:0,placed:0,pw:0,pacs:0,history:[],peak:0};saveR();}
+function applyRankHash(){let ch=false;if(location.hash==='#apex'&&(R.pts<2500||R.placed<3)){R.pts=Math.max(R.pts,2500);R.placed=Math.max(3,R.placed);R.peak=Math.max(R.peak,R.pts);saveR();ch=true;}
+  else if(location.hash==='#unranked'&&(R.placed>0||R.pts>0)){R={pts:0,placed:0,pw:0,pacs:0,history:[],peak:0};saveR();ch=true;}return ch;}
+applyRankHash();
+addEventListener('hashchange',()=>{if(applyRankHash()&&typeof renderRankPanel==='function')renderRankPanel();});
 function drawEmblem(cv,pts,unranked){
   const g=cv.getContext('2d'),S=cv.width,cx=S/2,cy=S/2,r=S*.43;g.clearRect(0,0,S,S);
   const rk=rankOf(pts),col=unranked?'#5a6670':rk.col;
