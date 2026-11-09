@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="description" content="Breachline: a free browser tactical shooter. 5v5 attack and defense, 10 agents, 16 guns, 3 maps, ranked play and an aim range.">
+<meta name="description" content="Breachline: a free browser tactical shooter. 5v5 attack and defense, online parties, 10 agents, 16 guns, 3 maps, ranked play and an aim range.">
 <title>Breachline</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;700;800&family=JetBrains+Mono:wght@400;700&display=swap">
@@ -1377,20 +1377,65 @@ function showFound(mk,label){
   const li=t=>agents.filter(a=>a.team===t).map(a=>`<div class="${a.isPlayer?'me':''}" style="color:${AG[a.key].col}"><span>${a.isPlayer?'You · ':''}${esc(a.name)}</span><small>${a.name!==AG[a.key].name?AG[a.key].name+' · ':''}${AG[a.key].role}</small></div>`).join('');
   $('fAlly').innerHTML=li('blue');$('fEnemy').innerHTML=li('red');
   $('found').hidden=false;G.mode='intro';G.introT=4;}
+
+// ---- peer-to-peer fallback (used when the page runs outside Claude, e.g. GitHub Pages) ----
+function loadPeerJS(){return new Promise((res,rej)=>{if(window.Peer)return res();const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js';sc.onload=()=>window.Peer?res():rej(new Error('load'));sc.onerror=()=>rej(new Error('load'));document.head.appendChild(sc);});}
+const GAMEKEYS=['s','sh','cl','cs','by','act','mid'];
+function makeP2P(){return{p2p:true,join:(name,opts)=>p2pJoin(name,opts||{})};}
+function p2pJoin(name,opts){return new Promise((resolve,reject)=>{
+  const hostId='breachline-'+name,relayMode=!!opts.create;let peer=null,myId=null,hostConn=null,closed=false,settled=false;
+  const conns=new Map(),pres=new Map(),handlers=new Set(),errHandlers=new Set();let myPres={},snap=Object.freeze([]),pend=false;
+  const done=(ok,v)=>{if(settled)return;settled=true;ok?resolve(v):reject(v);};
+  function rebuild(){snap=Object.freeze([...pres.entries()].map(([id,pr])=>Object.freeze({peer:id,presence:pr,isMe:id===myId,sameTab:id===myId,kind:'viewer',guest:false,by:null,updatedAt:Date.now()})));}
+  function fire(){rebuild();if(pend)return;pend=true;setTimeout(()=>{pend=false;for(const h of handlers){try{h({peers:snap,joined:[],left:[],updated:[]});}catch(e){}}},0);}
+  const strip=pr=>{const o={};for(const k in pr)if(!GAMEKEYS.includes(k))o[k]=pr[k];return o;};
+  function relay(id,pr,except){const msg={t:'p',id,pr:id===myId?pr:strip(pr)};for(const[cid,c]of conns)if(cid!==except&&c.open){try{c.send(msg);}catch(e){}}}
+  function fail(msg){if(closed)return;closed=true;for(const h of errHandlers){try{h({code:'upstream_error',message:msg});}catch(e){}}}
+  const room={name,
+    presence:async patch=>{if(closed)return;const n=Object.assign({},myPres,patch);for(const k in patch)if(patch[k]===null)delete n[k];myPres=n;pres.set(myId,myPres);
+      if(relayMode)relay(myId,myPres);else if(hostConn&&hostConn.open){try{hostConn.send({t:'p',id:myId,pr:myPres});}catch(e){}}fire();},
+    peers:()=>snap,
+    onPeers:(h,onErr)=>{handlers.add(h);if(onErr)errHandlers.add(onErr);setTimeout(()=>{try{h({peers:snap,joined:snap,left:[],updated:[]});}catch(e){}},0);return()=>{handlers.delete(h);if(onErr)errHandlers.delete(onErr);};},
+    connected:()=>!closed,onConnection:h=>{setTimeout(()=>h(!closed),0);return()=>{};},emit:async()=>{},on:()=>()=>{},
+    leave:async()=>{closed=true;handlers.clear();errHandlers.clear();try{peer&&peer.destroy();}catch(e){}}};
+  try{
+    if(relayMode){
+      peer=new window.Peer(hostId,{debug:0});
+      peer.on('open',id=>{myId=id;pres.set(myId,myPres);rebuild();done(true,room);});
+      peer.on('connection',c=>{
+        c.on('open',()=>{conns.set(c.peer,c);for(const[id,pr]of pres){try{c.send({t:'p',id,pr:id===myId?pr:strip(pr)});}catch(e){}}});
+        c.on('data',m=>{if(closed||!m||m.t!=='p'||!m.pr||typeof m.pr!=='object')return;pres.set(c.peer,m.pr);const lob=JSON.stringify(strip(m.pr));if(c._lob!==lob){c._lob=lob;relay(c.peer,m.pr,c.peer);}fire();});
+        const gone=()=>{if(!conns.has(c.peer))return;conns.delete(c.peer);pres.delete(c.peer);for(const[,cc]of conns)if(cc.open){try{cc.send({t:'x',id:c.peer});}catch(e){}}fire();};
+        c.on('close',gone);c.on('error',gone);});
+      peer.on('disconnected',()=>{if(!closed){try{peer.reconnect();}catch(e){}}});
+      peer.on('error',e=>{if(!settled)done(false,new Error(e&&e.type==='unavailable-id'?'taken':'network'));});
+    }else{
+      peer=new window.Peer({debug:0});
+      const to=setTimeout(()=>{if(!settled){done(false,new Error('not_found'));try{peer.destroy();}catch(e){}}},12000);
+      peer.on('open',id=>{myId=id;pres.set(myId,myPres);rebuild();
+        hostConn=peer.connect(hostId,{reliable:true,serialization:'json'});
+        hostConn.on('open',()=>{clearTimeout(to);try{hostConn.send({t:'p',id:myId,pr:myPres});}catch(e){}done(true,room);});
+        hostConn.on('data',m=>{if(closed||!m)return;if(m.t==='p'&&m.pr&&typeof m.pr==='object'&&m.id!==myId){pres.set(String(m.id),m.pr);fire();}else if(m.t==='x'){pres.delete(String(m.id));fire();}});
+        hostConn.on('close',()=>{for(const k of[...pres.keys()])if(k!==myId)pres.delete(k);fire();fail('host closed');});});
+      peer.on('error',e=>{if(!settled){clearTimeout(to);done(false,new Error(e&&e.type==='peer-unavailable'?'not_found':'network'));}else if(e&&e.type==='peer-unavailable')fail('host gone');});
+    }
+  }catch(e){done(false,new Error('network'));}
+});}
 // ---- lobby ----
 function mpMsg(t){$('mpMsg').textContent=t||'';}
 function myLobbyPres(){return{v:1,nm:cleanName($('mpName').value)||'Player',tm:NET.team,ag:G.agent,rd:NET.ready?1:0,hs:NET.isCreator?1:0,t0:NET.t0,lc:NET.amHost||NET.isCreator?NET.cfg:null};}
 function partyPeers(){return NET.party?NET.party.peers().filter(p=>p.kind==='viewer'):[];}
 function hostOf(ps){const live=ps.filter(p=>p.presence&&p.presence.v);const c=live.filter(p=>p.presence.hs);const pool=(c.length?c:live).slice();pool.sort((a,b)=>((+a.presence.t0||0)-(+b.presence.t0||0))||(a.peer<b.peer?-1:1));return pool[0]||null;}
-async function mpCreate(){const code=Array.from({length:4},()=>'abcdefghjkmnpqrstuvwxyz23456789'[Math.random()*31|0]).join('');NET.isCreator=true;await mpJoin(code);}
+async function mpCreate(){NET.isCreator=true;for(let i=0;i<3;i++){const code=Array.from({length:4},()=>'abcdefghjkmnpqrstuvwxyz23456789'[Math.random()*31|0]).join('');const r=await mpJoin(code);if(r!=='taken')return;}mpMsg('Could not create a party right now. Try again in a moment.');}
 async function mpJoin(code){
   if(!NET.room){mpMsg('Multiplayer is not available in this view.');return;}
   code=String(code||'').toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,8);if(!code){mpMsg('Type the party code your friend gave you.');return;}
   try{if(NET.party)await NET.party.leave();}catch(e){}
   NET.party=null;
-  try{NET.party=await NET.room.join('bl-'+code);}catch(e){mpMsg('Could not join that party right now. Try again in a moment.');NET.isCreator=false;renderMP();return;}
+  mpMsg(NET.isCreator?'Creating party…':'Connecting to the party…');
+  try{NET.party=NET.p2p?await NET.room.join('bl-'+code,{create:NET.isCreator}):await NET.room.join('bl-'+code);}catch(e){const m=e&&e.message;if(m==='taken')return'taken';mpMsg(m==='not_found'?'No party with that code. Check the code, and make sure the host still has the game open.':NET.p2p?'Could not connect. Some school or work networks block online play; try another network.':'Could not join that party right now. Try again in a moment.');NET.isCreator=false;renderMP();return;}
   NET.code=code;NET.ready=false;NET.t0=Date.now();NET.lastHtml='';
-  NET.party.onPeers(onPartyPeers,()=>{mpMsg('Lost the connection to the party.');NET.party=null;renderMP();});
+  NET.party.onPeers(onPartyPeers,()=>{if(NET.inGame&&NET.client)clientHostGone();NET.party=null;NET.isCreator=false;mpMsg('Lost the connection to the party. The host may have left.');renderMP();});
   NET.party.presence(myLobbyPres()).catch(()=>{});mpMsg(NET.isCreator?'Party created. Send the code to your friends.':'Joined the party.');renderMP();}
 async function mpLeave(){const pt=NET.party;NET.party=null;NET.code='';NET.isCreator=false;NET.amHost=false;try{if(pt)await pt.leave();}catch(e){}renderMP();}
 function lobbyUpdate(){if(NET.party&&!NET.inGame)NET.party.presence(myLobbyPres()).catch(()=>{});renderMP();}
@@ -1406,8 +1451,8 @@ function onPartyPeers(){
   if(G.mode==='menu')renderMP();}
 function renderMP(){
   const info=$('mpInfo');
-  if(!NET.room){info.textContent='Online multiplayer only works when the game is opened inside Claude (it uses the live rooms Claude provides). Everything else works here: Competitive, Unrated and the Range.';$('mpJoinBox').hidden=true;$('mpParty').hidden=true;return;}
-  info.textContent='Play with friends who have this page open at the same time. One person creates a party and shares the code; everyone else joins with it. Empty slots can fill with bots.';
+  if(!NET.room){info.textContent=NET.p2pFail?'Online play could not load. Check your internet connection and reload the page.':(window.claude&&window.claude.use)?'Multiplayer needs this page open inside Claude while you are signed in. Share it with your friends from the Share menu so they can open it too.':'Checking whether multiplayer is available here…';$('mpJoinBox').hidden=true;$('mpParty').hidden=true;return;}
+  info.textContent='Play with friends who have this page open at the same time. One person creates a party and shares the code; everyone else joins with it. Empty slots can fill with bots.'+(NET.p2p?' Players connect directly to the host, so some school or work networks may block it.':'');
   if(!NET.party){$('mpJoinBox').hidden=false;$('mpParty').hidden=true;NET.lastHtml='';return;}
   $('mpJoinBox').hidden=true;$('mpParty').hidden=false;
   const ps=partyPeers().filter(p=>p.presence&&p.presence.v);const h=hostOf(ps);const cfg=NET.amHost?NET.cfg:((h&&h.presence.lc)||NET.cfg);
@@ -1417,7 +1462,7 @@ function renderMP(){
   const mapName=cfg.map==='random'?'Random map':(MAPS[cfg.map]?MAPS[cfg.map].name:'Random map');
   const hostCtl=NET.amHost?`<div class="lbl">Match settings</div><div class="row">${cb('map','random','Random')}${MAPKEYS.map(k=>cb('map',k,MAPS[k].name)).join('')}</div><div class="row">${cb('bots',1,'Fill with bots')}${cb('bots',0,'Humans only')}</div><div class="row">${cb('skill','easy','Easy bots')}${cb('skill','normal','Normal bots')}${cb('skill','hard','Hard bots')}</div><div class="row">${cb('win',5,'First to 5')}${cb('win',7,'First to 7')}</div><div class="row"><button class="go" data-mp="start">Start match</button><span class="rsub">${ps.filter(p=>p.presence.rd).length} of ${ps.length} ready</span></div>`
     :`<p>Waiting for the host to start · ${esc(mapName)} · ${cfg.bots?'bots fill empty slots':'humans only'} · first to ${(+cfg.win)|0}</p>`;
-  const html=`<div class="buyhead"><div><span class="lbl">Party code</span><b class="code">${esc(NET.code)}</b></div><div class="row"><button data-mp="copy">Copy code</button><button data-mp="leave">Leave party</button></div></div>
+  const html=`<div class="buyhead"><div><span class="lbl">Party code</span><b class="code">${esc(NET.code)}</b></div><div class="row"><button data-mp="copy">Copy code</button>${NET.p2p?'<button data-mp="link">Copy invite link</button>':''}<button data-mp="leave">Leave party</button></div></div>
   <div class="teams2"><div><div class="lbl">Team A</div>${A.map(mem).join('')||'<div class="empty">Nobody yet</div>'}</div><div><div class="lbl">Team B</div>${B.map(mem).join('')||'<div class="empty">Nobody yet</div>'}</div></div>
   <div class="row"><button data-mp="ta" class="${NET.team!=='B'?'on':''}">Play on Team A</button><button data-mp="tb" class="${NET.team==='B'?'on':''}">Play on Team B</button><button data-mp="ready" class="${NET.ready?'on':''}">${NET.ready?'Ready':'Ready up'}</button></div>${hostCtl}
   <p class="rsub">Pick your agent below. Keep this tab open and in front while you play: the host's tab runs the rounds and the bots.</p>`;
@@ -1430,9 +1475,13 @@ $('mpCode').addEventListener('keydown',e=>{if(e.key==='Enter'){audio();mpJoin($(
 $('mpParty').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const a=b.dataset.mp;
   if(a==='leave')mpLeave();else if(a==='ta'){NET.team='A';lobbyUpdate();}else if(a==='tb'){NET.team='B';lobbyUpdate();}else if(a==='ready'){NET.ready=!NET.ready;lobbyUpdate();}
   else if(a==='start'){audio();mpStart();}
+  else if(a==='link'){const u=location.origin+location.pathname+'?party='+NET.code;try{navigator.clipboard.writeText(u).then(()=>mpMsg('Invite link copied: '+u),()=>mpMsg('Send this link: '+u));}catch(err){mpMsg('Send this link: '+u);}}
   else if(a==='copy'){try{navigator.clipboard.writeText(NET.code).then(()=>mpMsg('Code copied. Send it to your friends.'),()=>mpMsg('Copy this code by hand: '+NET.code));}catch(err){mpMsg('Copy this code by hand: '+NET.code);}}
   else if(b.dataset.cfg&&NET.amHost){const[k,v]=b.dataset.cfg.split(':');NET.cfg[k]=(k==='bots'||k==='win')?+v:v;lobbyUpdate();}});
-(async()=>{try{if(window.claude&&window.claude.use)NET.room=await window.claude.use('room');}catch(e){NET.room=null;}renderMP();})();
+(async()=>{const inClaude=!!(window.claude&&window.claude.use);try{if(inClaude)NET.room=await window.claude.use('room');}catch(e){NET.room=null;}
+  if(!NET.room&&!inClaude){try{await loadPeerJS();NET.room=makeP2P();NET.p2p=true;}catch(e){NET.room=null;NET.p2pFail=true;}}
+  renderMP();
+  try{const q=new URLSearchParams(location.search).get('party');if(q&&NET.room){$('mpCode').value=q.toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,8);const b=document.querySelector('#modeTabs [data-m="mp"]');if(b)b.click();mpMsg('You were invited to a party. Type your name and press Join party.');}}catch(e){}})();
 // ---- host ----
 function mpStart(){
   if(!NET.amHost||!NET.party||NET.inGame)return;

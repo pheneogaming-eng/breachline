@@ -11,6 +11,7 @@ A free tactical shooter that runs in your browser. No install, no download: open
 - **Competitive mode** with placement matches, ranks from Copper to Apex, RR and match history.
 - **Smart bots** that play the objective, call out enemies, use utility and get tougher as you rank up.
 - **The Range** for aim practice, with accuracy, headshot, reaction time and time-to-kill stats.
+- **Online multiplayer parties** for up to 10 players, with bots filling empty slots.
 - **Valorant-style sensitivity** conversion, 103° FOV, raw mouse input and a dot crosshair.
 
 ## Controls
@@ -38,7 +39,7 @@ You can also just double-click `index.html` to play it locally.
 
 ## Notes
 
-- The game loads [three.js](https://threejs.org) r128 from cdnjs and two fonts from Google Fonts, so it needs an internet connection.
+- The game loads [three.js](https://threejs.org) r128 from cdnjs, PeerJS from jsDelivr for multiplayer, and two fonts from Google Fonts, so it needs an internet connection.
 - Your rank, settings and match history are saved in your browser (local storage). Clearing browser data resets them.
-- Online multiplayer parties only work when the game is opened inside Claude, because they use Claude's live rooms. Single-player modes work everywhere.
+- Online multiplayer: open the **Multiplayer** tab, press **Create party**, and send your friends the code or the invite link. Players connect directly to the host's browser (peer to peer, using the free [PeerJS](https://peerjs.com) service to find each other), so the host should keep the game tab open and in front. Some school or work networks block peer-to-peer connections; if joining fails, try another network.
 - Breachline is an original fan-made game inspired by tactical shooters. It isn't affiliated with or endorsed by any game company.
