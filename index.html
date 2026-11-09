@@ -1403,7 +1403,7 @@ function showFound(mk,label){
   $('fAlly').innerHTML=li('blue');$('fEnemy').innerHTML=li('red');
   $('found').hidden=false;G.mode='intro';G.introT=4;}
 
-// ---- peer-to-peer fallback (used when the page runs outside Claude, e.g. GitHub Pages) ----
+// ---- peer-to-peer fallback (used on GitHub Pages) ----
 function loadPeerJS(){return new Promise((res,rej)=>{if(window.Peer)return res();const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js';sc.onload=()=>window.Peer?res():rej(new Error('load'));sc.onerror=()=>rej(new Error('load'));document.head.appendChild(sc);});}
 const GAMEKEYS=['s','sh','cl','cs','by','act','mid'];
 function makeP2P(){return{p2p:true,join:(name,opts)=>p2pJoin(name,opts||{})};}
@@ -1447,7 +1447,7 @@ function p2pJoin(name,opts){return new Promise((resolve,reject)=>{
   }catch(e){done(false,new Error('network'));}
 });}
 
-// ---- Firebase relay (used outside Claude when a Firebase config is set; works on school Wi-Fi) ----
+// ---- Firebase relay (used when a Firebase config is set; works on school Wi-Fi) ----
 const FIREBASE_CONFIG=null;
 function loadScript(src){return new Promise((res,rej)=>{const sc=document.createElement('script');sc.src=src;sc.onload=()=>res();sc.onerror=()=>rej(new Error('load'));document.head.appendChild(sc);});}
 async function loadFirebase(){
@@ -1506,7 +1506,7 @@ async function mpJoin(code){
   try{if(NET.party)await NET.party.leave();}catch(e){}
   NET.party=null;
   mpMsg(NET.isCreator?'Creating party…':'Connecting to the party…');
-  try{NET.party=(NET.p2p||NET.fb)?await NET.room.join('bl-'+code,{create:NET.isCreator}):await NET.room.join('bl-'+code);}catch(e){const m=e&&e.message;if(m==='taken')return'taken';mpMsg(m==='network'&&NET.fb?'Could not reach the game server. Check your internet connection and try again.':m==='not_found'?'No party with that code. Check the code, and make sure the host still has the game open.':m==='blocked'?'Found the party but could not reach the host. Your network is probably blocking player-to-player connections (school Wi-Fi usually does). Try a phone hotspot or home Wi-Fi, or play the version inside Claude, which works on school networks.':NET.p2p?'Could not connect. Some school or work networks block online play; try another network.':'Could not join that party right now. Try again in a moment.');NET.isCreator=false;renderMP();return;}
+  try{NET.party=(NET.p2p||NET.fb)?await NET.room.join('bl-'+code,{create:NET.isCreator}):await NET.room.join('bl-'+code);}catch(e){const m=e&&e.message;if(m==='taken')return'taken';mpMsg(m==='network'&&NET.fb?'Could not reach the game server. Check your internet connection and try again.':m==='not_found'?'No party with that code. Check the code, and make sure the host still has the game open.':m==='blocked'?'Found the party but could not reach the host. Your network is probably blocking player-to-player connections (school Wi-Fi usually does). Try a phone hotspot or home Wi-Fi, or use the other game link, which works on school networks.':NET.p2p?'Could not connect. Some school or work networks block online play; try another network.':'Could not join that party right now. Try again in a moment.');NET.isCreator=false;renderMP();return;}
   NET.code=code;NET.ready=false;NET.t0=Date.now();NET.lastHtml='';
   NET.party.onPeers(onPartyPeers,()=>{if(NET.inGame&&NET.client)clientHostGone();NET.party=null;NET.isCreator=false;mpMsg('Lost the connection to the party. The host may have left.');renderMP();});
   NET.party.presence(myLobbyPres()).catch(()=>{});mpMsg(NET.isCreator?'Party created. Send the code to your friends.':'Joined the party.');renderMP();}
@@ -1524,7 +1524,7 @@ function onPartyPeers(){
   if(G.mode==='menu')renderMP();}
 function renderMP(){
   const info=$('mpInfo');
-  if(!NET.room){info.textContent=NET.p2pFail?'Online play could not load. Check your internet connection and reload the page.':(window.claude&&window.claude.use)?'Multiplayer needs this page open inside Claude while you are signed in. Share it with your friends from the Share menu so they can open it too.':'Checking whether multiplayer is available here…';$('mpJoinBox').hidden=true;$('mpParty').hidden=true;return;}
+  if(!NET.room){info.textContent=NET.p2pFail?'Online play could not load. Check your internet connection and reload the page.':(window.claude&&window.claude.use)?'Multiplayer needs you to be signed in on this page. Share it with your friends from the Share menu so they can open it too.':'Checking whether multiplayer is available here…';$('mpJoinBox').hidden=true;$('mpParty').hidden=true;return;}
   info.textContent='Play with friends who have this page open at the same time. One person creates a party and shares the code; everyone else joins with it. Empty slots can fill with bots.'+(NET.p2p?' Players connect directly to the host, so some school or work networks may block it.':NET.fb?' Online play goes through a server, so it works on school Wi-Fi too.':'');
   if(!NET.party){$('mpJoinBox').hidden=false;$('mpParty').hidden=true;NET.lastHtml='';return;}
   $('mpJoinBox').hidden=true;$('mpParty').hidden=false;
