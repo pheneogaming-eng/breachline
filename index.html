@@ -264,7 +264,7 @@ b.code{display:block;font-family:var(--display);font-size:44px;letter-spacing:.2
 <div class="screen" id="menu">
   <div class="card wide">
     <h1>Breach<span>line</span></h1>
-    <div class="lbl" style="margin-top:6px">Version 1.8 · online parties</div>
+    <div class="lbl" style="margin-top:6px">Version 1.9 · online parties</div>
     <p>5v5 attack and defense on three maps. Attackers plant the Core on site A or B; defenders stop them or defuse it.</p>
     <div class="tabs" id="modeTabs"><button data-m="ranked" class="on">Competitive</button><button data-m="unrated">Unrated</button><button data-m="range">Range</button><button data-m="mp">Multiplayer</button></div>
     <div class="panel" id="rankedPanel">
@@ -1412,7 +1412,7 @@ function p2pJoin(name,opts){return new Promise((resolve,reject)=>{
       peer.on('error',e=>{if(!settled)done(false,new Error(e&&e.type==='unavailable-id'?'taken':'network'));});
     }else{
       peer=new window.Peer({debug:0});
-      const to=setTimeout(()=>{if(!settled){done(false,new Error('not_found'));try{peer.destroy();}catch(e){}}},12000);
+      const to=setTimeout(()=>{if(!settled){done(false,new Error('blocked'));try{peer.destroy();}catch(e){}}},12000);
       peer.on('open',id=>{myId=id;pres.set(myId,myPres);rebuild();
         hostConn=peer.connect(hostId,{reliable:true,serialization:'json'});
         hostConn.on('open',()=>{clearTimeout(to);try{hostConn.send({t:'p',id:myId,pr:myPres});}catch(e){}done(true,room);});
@@ -1434,7 +1434,7 @@ async function mpJoin(code){
   try{if(NET.party)await NET.party.leave();}catch(e){}
   NET.party=null;
   mpMsg(NET.isCreator?'Creating party…':'Connecting to the party…');
-  try{NET.party=NET.p2p?await NET.room.join('bl-'+code,{create:NET.isCreator}):await NET.room.join('bl-'+code);}catch(e){const m=e&&e.message;if(m==='taken')return'taken';mpMsg(m==='not_found'?'No party with that code. Check the code, and make sure the host still has the game open.':NET.p2p?'Could not connect. Some school or work networks block online play; try another network.':'Could not join that party right now. Try again in a moment.');NET.isCreator=false;renderMP();return;}
+  try{NET.party=NET.p2p?await NET.room.join('bl-'+code,{create:NET.isCreator}):await NET.room.join('bl-'+code);}catch(e){const m=e&&e.message;if(m==='taken')return'taken';mpMsg(m==='not_found'?'No party with that code. Check the code, and make sure the host still has the game open.':m==='blocked'?'Found the party but could not reach the host. Your network is probably blocking player-to-player connections (school Wi-Fi usually does). Try a phone hotspot or home Wi-Fi, or play the version inside Claude, which works on school networks.':NET.p2p?'Could not connect. Some school or work networks block online play; try another network.':'Could not join that party right now. Try again in a moment.');NET.isCreator=false;renderMP();return;}
   NET.code=code;NET.ready=false;NET.t0=Date.now();NET.lastHtml='';
   NET.party.onPeers(onPartyPeers,()=>{if(NET.inGame&&NET.client)clientHostGone();NET.party=null;NET.isCreator=false;mpMsg('Lost the connection to the party. The host may have left.');renderMP();});
   NET.party.presence(myLobbyPres()).catch(()=>{});mpMsg(NET.isCreator?'Party created. Send the code to your friends.':'Joined the party.');renderMP();}
