@@ -631,6 +631,7 @@ let R={pts:0,placed:0,pw:0,pacs:0,history:[],peak:0};
 try{const s=JSON.parse(localStorage.getItem(RKEY)||'null');if(s&&typeof s.pts==='number')R=Object.assign(R,s);}catch(e){}
 function saveR(){try{localStorage.setItem(RKEY,JSON.stringify(R));}catch(e){}}
 if(location.hash==='#apex'&&R.pts<2500){R.pts=2500;R.placed=Math.max(3,R.placed);R.peak=Math.max(R.peak,2500);saveR();}
+if(location.hash==='#unranked'&&(R.placed>0||R.pts>0)){R={pts:0,placed:0,pw:0,pacs:0,history:[],peak:0};saveR();}
 function drawEmblem(cv,pts,unranked){
   const g=cv.getContext('2d'),S=cv.width,cx=S/2,cy=S/2,r=S*.43;g.clearRect(0,0,S,S);
   const rk=rankOf(pts),col=unranked?'#5a6670':rk.col;
