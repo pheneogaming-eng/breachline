@@ -173,6 +173,17 @@ input[type=range]{width:100%;accent-color:#f2c14e}
 .sensrow input{font-family:var(--mono);font-size:14px;background:#0b1014;color:var(--fg);border:1px solid var(--line);padding:6px 8px;width:100%;box-sizing:border-box}
 .sensrow input:focus-visible{outline:2px solid var(--sig);outline-offset:1px}
 .sw{width:32px;height:32px;padding:0;background:var(--swc)}
+.lockcard{max-width:1100px}
+.lkhead{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.lkgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;margin-top:12px;max-height:70vh;overflow:auto;padding-right:4px}
+.lkw{border:1px solid var(--line);padding:10px 12px;background:#0e1419}
+.lkw .lt{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.lkw b{font-family:var(--display);font-size:20px;letter-spacing:.06em;text-transform:uppercase}
+.lkw small{color:var(--dim);font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+.lkw .bar{height:8px;margin:8px 0;background:linear-gradient(90deg,var(--sb) 0 70%,var(--sa) 70%)}
+.lkw .row{gap:6px;flex-wrap:wrap;margin:0}
+.lkw .skin{width:34px;height:24px}
+.lkw .sn{font-size:12px;color:var(--dim);margin-top:6px}
 .skin{width:44px;height:30px;padding:0;background:linear-gradient(135deg,var(--sb) 0 58%,var(--sa) 58% 100%)}
 .skin.on{background:linear-gradient(135deg,var(--sb) 0 58%,var(--sa) 58% 100%);box-shadow:0 0 0 2px var(--ink),0 0 0 4px var(--sig)}
 .sw.on{background:var(--swc);box-shadow:0 0 0 2px var(--ink),0 0 0 4px var(--sig)}
@@ -276,7 +287,7 @@ b.code{display:block;font-family:var(--display);font-size:44px;letter-spacing:.2
 <div class="screen" id="menu">
   <div class="card wide">
     <h1>Breach<span>line</span></h1>
-    <div class="lbl" style="margin-top:6px">Version 2.3 · knives</div>
+    <div class="lbl" style="margin-top:6px">Version 2.4 · locker</div>
     <p>5v5 attack and defense on three maps. Attackers plant the Core on site A or B; defenders stop them or defuse it.</p>
     <div class="tabs" id="modeTabs"><button data-m="ranked" class="on">Competitive</button><button data-m="unrated">Unrated</button><button data-m="range">Range</button><button data-m="mp">Multiplayer</button></div>
     <div class="panel" id="rankedPanel">
@@ -322,7 +333,7 @@ b.code{display:block;font-family:var(--display);font-size:44px;letter-spacing:.2
         <div class="rsub">In-game sens <b id="sensOut">0.405</b> at your current DPI. Same turn per inch as Valorant, 103° FOV, raw mouse input.</div></div>
       <div><div class="lbl">Crosshair</div><div class="row" id="xhStyle"><button data-x="dot" class="on">Dot</button><button data-x="cross">Cross</button></div>
         <div class="row" id="xhCol"><button class="sw" data-c="#4ee6ff" style="--swc:#4ee6ff" aria-label="Cyan"></button><button class="sw" data-c="#ffffff" style="--swc:#ffffff" aria-label="White"></button><button class="sw" data-c="#7dff6a" style="--swc:#7dff6a" aria-label="Green"></button><button class="sw" data-c="#f2e94e" style="--swc:#f2e94e" aria-label="Yellow"></button><button class="sw" data-c="#ff5ad1" style="--swc:#ff5ad1" aria-label="Pink"></button></div></div>
-      <div><div class="lbl">Weapon skin <span id="skinName">Stock</span></div><div class="row" id="skinRow"></div><div class="lbl">Knife</div><div class="row" id="knRow"><button data-kn="blade" class="on">Blade</button><button data-kn="karambit">Karambit</button></div><div class="lbl">Code</div><div class="row"><input id="codeIn" maxlength="40" autocomplete="off" spellcheck="false" style="flex:1;min-width:0"><button id="codeGo">Apply</button></div><div class="rsub" id="codeMsg"></div></div>
+      <div><div class="lbl">Weapon skin <span id="skinName">Stock</span></div><div class="row" id="skinRow"></div><div class="row"><button id="openLocker">Open locker</button></div><div class="rsub">The skin above is your default. In the locker you can give each weapon its own.</div><div class="lbl">Knife</div><div class="row" id="knRow"><button data-kn="blade" class="on">Blade</button><button data-kn="karambit">Karambit</button></div><div class="lbl">Code</div><div class="row"><input id="codeIn" maxlength="40" autocomplete="off" spellcheck="false" style="flex:1;min-width:0"><button id="codeGo">Apply</button></div><div class="rsub" id="codeMsg"></div></div>
       <div><div class="lbl">Graphics</div><div class="row" id="gfx"><button data-g="low">Low</button><button data-g="med" class="on">Medium</button><button data-g="high">High</button></div>
         <div class="lbl">Volume <span id="volV">70</span>%</div><div class="row"><input type="range" id="vol" min="0" max="100" step="5" value="70" aria-label="Volume"></div>
         <div class="row" id="fpsTog"><button data-f="off" class="on">FPS off</button><button data-f="on">FPS on</button></div></div>
@@ -341,6 +352,12 @@ b.code{display:block;font-family:var(--display);font-size:44px;letter-spacing:.2
   </div>
 </div>
 
+<div class="screen" id="locker" hidden>
+  <div class="card wide lockcard">
+    <div class="lkhead"><h1>Lock<span>er</span></h1><button id="lkBack">Back</button></div>
+    <div class="lkgrid" id="lkGrid"></div>
+  </div>
+</div>
 <div class="screen" id="found" hidden>
   <div class="card wide found">
     <div class="lbl" id="fMode">Competitive · Match found</div>
@@ -689,7 +706,7 @@ function sfxAt(type,pos,range){
 }
 
 // ================= state =================
-const G={mode:'menu',phase:'buy',timer:0,roundT:0,round:0,endT:0,size:5,half:4,win:5,diff:'normal',agent:'halo',sens:1,vsens:.405,skin:'stock',knife:'blade',rmode:'static',range:false,gfx:'med',vol:.7,fps:false,xs:'dot',xc:'#4ee6ff',map:'foundry',mapPick:'random',tab:'ranked',ranked:false,active:false,sk:skillFor(.5),introT:0};
+const G={mode:'menu',phase:'buy',timer:0,roundT:0,round:0,endT:0,size:5,half:4,win:5,diff:'normal',agent:'halo',sens:1,vsens:.405,skin:'stock',knife:'blade',locker:{},rmode:'static',range:false,gfx:'med',vol:.7,fps:false,xs:'dot',xc:'#4ee6ff',map:'foundry',mapPick:'random',tab:'ranked',ranked:false,active:false,sk:skillFor(.5),introT:0};
 const teams={blue:{side:'atk',score:0,intel:new Map(),plan:'A',execute:false,alertSite:null,alertT:-99,smoked:{},lastCall:new Map()},red:{side:'def',score:0,intel:new Map(),plan:'A',execute:false,alertSite:null,alertT:-99,smoked:{},lastCall:new Map()}};
 let agents=[],P=null;
 const core={state:'none',carrier:null,pos:V(),site:null,timer:0,defuseProg:0,defusingNow:false,beepT:0,lastDefuse:-99,defuser:null};
@@ -721,7 +738,9 @@ const SKINS={
 var AQnew,blReady=false;var AQ=AQ||false;try{if(!AQ)AQ=localStorage.getItem('bl-aq')==='1';}catch(e){}
 let aquaTex=null;
 let camoTex=null;
-function skinMats(w){const sk=SKINS[G.skin]&&(!SKINS[G.skin].dev||AQ)?SKINS[G.skin]:SKINS.stock;
+const skOK=k=>!!(SKINS[k]&&(!SKINS[k].dev||AQ));
+function skinFor(key){const l=G.locker&&G.locker[key];return skOK(l)?l:skOK(G.skin)?G.skin:'stock';}
+function skinMats(w,key){const sk=SKINS[skinFor(key)];
   if(sk.pat==='aqua'){if(!aquaTex){aquaTex=tex((g,sz)=>{const gr=g.createLinearGradient(0,0,sz,sz);gr.addColorStop(0,'#0a6f78');gr.addColorStop(.5,'#18c9bd');gr.addColorStop(1,'#0a5560');g.fillStyle=gr;g.fillRect(0,0,sz,sz);
       g.strokeStyle='#f2c14e';g.lineWidth=3;g.lineJoin='round';for(let row=0;row<4;row++)for(const off of[0,9]){const y=row*32+10+off;g.beginPath();for(let x=-8;x<=sz+8;x+=16)g.lineTo(x,y+((x/16)%2?-5:5));g.stroke();}
       g.fillStyle='#ffffff55';for(let i=0;i<26;i++){g.beginPath();g.arc(Math.random()*sz,Math.random()*sz,1+Math.random()*2,0,7);g.fill();}},128);aquaTex.wrapS=aquaTex.wrapT=THREE.RepeatWrapping;}
@@ -731,8 +750,8 @@ function skinMats(w){const sk=SKINS[G.skin]&&(!SKINS[G.skin].dev||AQ)?SKINS[G.sk
   return{body:new THREE.MeshLambertMaterial({color:sk.body!=null?sk.body:w.col,depthTest:false}),acc:new THREE.MeshLambertMaterial({color:sk.acc!=null?sk.acc:new THREE.Color(AG[G.agent].col),emissive:sk.glow||0,depthTest:false})};}
 function buildVM(key){
   if(vmGun)vm.remove(vmGun);vmKey=key;const w=W[key];const g=new THREE.Group();
-  const sm=skinMats(w);const mat=sm.body,acc=sm.acc;
-  if(w.melee){const bm=new THREE.MeshLambertMaterial({color:G.skin==='aquas'&&AQ?0xf2e2a0:0xc9d2da,emissive:G.skin==='aquas'&&AQ?0x3a2a00:0x111418,depthTest:false});const kg=new THREE.Group();kg.position.set(.02,-.04,-.22);kg.rotation.set(-.15,.12,.35);kg.scale.setScalar(.8);g.add(kg);const P0=G.knife==='karambit'?[0,-.01,.11]:[0,0,.02];const pv=new THREE.Group();pv.position.set(...P0);kg.add(pv);vmPiv=pv;const add=(geo,m,x,y,z,rx,ry,rz)=>{const p=new THREE.Mesh(geo,m);p.position.set(x-P0[0],y-P0[1],z-P0[2]);p.rotation.set(rx||0,ry||0,rz||0);p.renderOrder=999;pv.add(p);return p;};
+  const sm=skinMats(w,key);const aqOn=skinFor(key)==='aquas';const mat=sm.body,acc=sm.acc;
+  if(w.melee){const bm=new THREE.MeshLambertMaterial({color:aqOn?0xf2e2a0:0xc9d2da,emissive:aqOn?0x3a2a00:0x111418,depthTest:false});const kg=new THREE.Group();kg.position.set(.02,-.04,-.22);kg.rotation.set(-.15,.12,.35);kg.scale.setScalar(.8);g.add(kg);const P0=G.knife==='karambit'?[0,-.01,.11]:[0,0,.02];const pv=new THREE.Group();pv.position.set(...P0);kg.add(pv);vmPiv=pv;const add=(geo,m,x,y,z,rx,ry,rz)=>{const p=new THREE.Mesh(geo,m);p.position.set(x-P0[0],y-P0[1],z-P0[2]);p.rotation.set(rx||0,ry||0,rz||0);p.renderOrder=999;pv.add(p);return p;};
     add(new THREE.BoxGeometry(.045,.05,.14),mat,0,0,.02);
     if(G.knife==='karambit'){add(new THREE.TorusGeometry(.035,.009,6,14),acc,0,-.01,.11,0,Math.PI/2,0);for(let i=0;i<7;i++){const a=i/6*1.25;add(new THREE.BoxGeometry(.012,.03-i*.0025,.045),bm,0,.012+Math.sin(a)*.09-(1-Math.cos(a))*.02,-.06-Math.sin(a)*.05-i*.012,-a*.9);}}
     else{add(new THREE.BoxGeometry(.06,.016,.02),acc,0,0,-.055);add(new THREE.BoxGeometry(.012,.04,.2),bm,0,.004,-.165);add(new THREE.BoxGeometry(.012,.02,.05),bm,0,.014,-.285,.5);}
@@ -880,7 +899,7 @@ function damage(t,dmg,src,head,wname){
 }
 function announce(txt){const el=$('mk');el.textContent=txt;el.style.transition='none';el.style.opacity=1;el.style.transform='scale(1.15)';requestAnimationFrame(()=>{el.style.transition='opacity 1.6s ease-in .6s,transform .3s';el.style.opacity=0;el.style.transform='scale(1)';});sfx('multi');}
 function playerKill(v,n){
-  if(!(G.skin==='aquas'&&AQ)){sfx('kill');return;}
+  if(skinFor(wkey(P))!=='aquas'){sfx('kill');return;}
   sfx('aq');setTimeout(()=>sfx('aq2'),140);
   if(v&&v.pos){const p=V(v.pos.x,v.pos.y+.9,v.pos.z);ring(p,0x18c9bd,2.2,.6);ring(V(p.x,p.y+.3,p.z),0xf2c14e,1.4,.5);
     for(let i=0;i<26;i++){const m=new THREE.Mesh(new THREE.SphereGeometry(.05,6,5),new THREE.MeshBasicMaterial({color:i%3?0x2fe0d4:0xf2c14e,transparent:true}));m.position.copy(p);scene.add(m);const a=Math.random()*6.283;fx.push({o:m,t:.9,max:.9,v:V(Math.cos(a)*(1+Math.random()*2),3+Math.random()*3,Math.sin(a)*(1+Math.random()*2))});}}
@@ -1872,7 +1891,7 @@ function segmented(id,attr,fn){document.querySelectorAll(`#${id} button`).forEac
 segmented('diff','d',v=>G.diff=v);segmented('size','s',v=>G.size=+v);segmented('mapPick','p',v=>G.mapPick=v);
 segmented('rangeMode','r',v=>G.rmode=v);
 segmented('modeTabs','m',v=>{G.tab=v;$('rankedPanel').hidden=v!=='ranked';$('unratedPanel').hidden=v!=='unrated';$('rangePanel').hidden=v!=='range';$('mpPanel').hidden=v!=='mp';$('play').hidden=v==='mp';if(v==='mp')renderMP();$('play').textContent=v==='ranked'?'Find match':v==='range'?'Enter range':'Start match';try{localStorage.setItem('bl-tab',v);}catch(err){}});
-try{const st=JSON.parse(localStorage.getItem('bl-set')||'null');if(st){for(const k of['vSens','vDpi','nDpi'])if(st[k]>0)$(k).value=st[k];if(st.xs)G.xs=st.xs;if(st.xc)G.xc=st.xc;if(st.gfx)G.gfx=st.gfx;if(st.skin&&SKINS[st.skin]&&(!SKINS[st.skin].dev||AQ))G.skin=st.skin;if(st.kn)G.knife=st.kn;if(st.vol!=null)$('vol').value=Math.round(st.vol*100);if(st.fps!=null)G.fps=st.fps;}const ag=localStorage.getItem('bl-agent');if(ag&&AG[ag]){G.agent=ag;renderAgents();}const tb=localStorage.getItem('bl-tab');if(tb==='unrated'||tb==='range'||tb==='mp')document.querySelector(`#modeTabs [data-m="${tb}"]`).click();}catch(e){}
+try{const st=JSON.parse(localStorage.getItem('bl-set')||'null');if(st){for(const k of['vSens','vDpi','nDpi'])if(st[k]>0)$(k).value=st[k];if(st.xs)G.xs=st.xs;if(st.xc)G.xc=st.xc;if(st.gfx)G.gfx=st.gfx;if(st.skin&&SKINS[st.skin]&&(!SKINS[st.skin].dev||AQ))G.skin=st.skin;if(st.kn)G.knife=st.kn;if(st.lk&&typeof st.lk==='object')G.locker=st.lk;if(st.vol!=null)$('vol').value=Math.round(st.vol*100);if(st.fps!=null)G.fps=st.fps;}const ag=localStorage.getItem('bl-agent');if(ag&&AG[ag]){G.agent=ag;renderAgents();}const tb=localStorage.getItem('bl-tab');if(tb==='unrated'||tb==='range'||tb==='mp')document.querySelector(`#modeTabs [data-m="${tb}"]`).click();}catch(e){}
 function applySettings(save){const vs=parseFloat($('vSens').value),vd=parseFloat($('vDpi').value),nd=parseFloat($('nDpi').value);if(vs>0&&vd>0&&nd>0)G.vsens=vs*vd/nd;$('sensOut').textContent=G.vsens.toFixed(3);
   document.querySelectorAll('#xhStyle button').forEach(b=>b.classList.toggle('on',b.dataset.x===G.xs));document.querySelectorAll('#xhCol button').forEach(b=>b.classList.toggle('on',b.dataset.c===G.xc));
   $('xh').className=G.xs;document.documentElement.style.setProperty('--xh',G.xc);
@@ -1880,10 +1899,19 @@ function applySettings(save){const vs=parseFloat($('vSens').value),vd=parseFloat
   document.querySelectorAll('#gfx button').forEach(b=>b.classList.toggle('on',b.dataset.g===G.gfx));renderer.setPixelRatio({low:.65,med:1,high:Math.min(window.devicePixelRatio||1,1.5)}[G.gfx]||1);resize();
   G.vol=(+$('vol').value||0)/100;$('volV').textContent=Math.round(G.vol*100);if(master)master.gain.value=G.vol;
   document.querySelectorAll('#fpsTog button').forEach(b=>b.classList.toggle('on',b.dataset.f===(G.fps?'on':'off')));$('fps').hidden=!G.fps;
-  if(save)try{localStorage.setItem('bl-set',JSON.stringify({vSens:vs,vDpi:vd,nDpi:nd,xs:G.xs,xc:G.xc,gfx:G.gfx,vol:G.vol,fps:G.fps,skin:G.skin,kn:G.knife}));}catch(e){}}
+  if(save)try{localStorage.setItem('bl-set',JSON.stringify({vSens:vs,vDpi:vd,nDpi:nd,xs:G.xs,xc:G.xc,gfx:G.gfx,vol:G.vol,fps:G.fps,skin:G.skin,kn:G.knife,lk:G.locker}));}catch(e){}}
 function renderSkins(){const hx=c=>'#'+new THREE.Color(c).getHexString();$('skinRow').innerHTML=Object.entries(SKINS).filter(([k,v])=>!v.dev||AQ).map(([k,v])=>`<button class="skin" data-sk="${k}" aria-label="${v.name}" title="${v.name}" style="--sb:${v.pat==='aqua'?'#18c9bd':v.pat?'#4b5a32':v.body!=null?hx(v.body):'#3a4048'};--sa:${v.acc!=null?hx(v.acc):'#f2c14e'}"></button>`).join('');
   document.querySelectorAll('#skinRow button').forEach(b=>b.onclick=()=>{G.skin=b.dataset.sk;applySettings(true);});}
 renderSkins();blReady=true;
+const LKO=['knife','wren','sting','rook','wasp','hornet','gust','breaker','pike','lancer','halberd','warden','needle','longreach','jolt','hush'].filter(k=>W[k]);
+for(const k in W)if(!LKO.includes(k))LKO.push(k);
+function skCol(v){const hx=c=>'#'+new THREE.Color(c).getHexString();return[v.pat==='aqua'?'#18c9bd':v.pat?'#4b5a32':v.body!=null?hx(v.body):'#3a4048',v.acc!=null?hx(v.acc):'#f2c14e'];}
+function renderLocker(){const list=Object.entries(SKINS).filter(([k,v])=>!v.dev||AQ);
+  $('lkGrid').innerHTML=LKO.map(wk=>{const w=W[wk],cur=skinFor(wk),own=G.locker[wk]&&skOK(G.locker[wk]);const[cb,ca]=skCol(SKINS[cur]);
+    return `<div class="lkw"><div class="lt"><b>${w.name}</b><small>${w.cat||''}</small></div><div class="bar" style="--sb:${cb};--sa:${ca}"></div><div class="row"><button class="${own?'':'on'}" data-w="${wk}" data-k="" style="height:24px;padding:0 8px;font-size:11px">Default</button>${list.map(([k,v])=>{const[b,a]=skCol(v);return `<button class="skin${own&&G.locker[wk]===k?' on':''}" data-w="${wk}" data-k="${k}" title="${v.name}" aria-label="${v.name}" style="--sb:${b};--sa:${a}"></button>`}).join('')}</div><div class="sn">${SKINS[cur].name}${own?'':' · default'}</div></div>`;}).join('');
+  document.querySelectorAll('#lkGrid button').forEach(b=>b.onclick=()=>{const wk=b.dataset.w,k=b.dataset.k;if(k)G.locker[wk]=k;else delete G.locker[wk];applySettings(true);renderLocker();});}
+$('openLocker').onclick=()=>{renderLocker();$('menu').hidden=true;$('locker').hidden=false;};
+$('lkBack').onclick=()=>{$('locker').hidden=true;$('menu').hidden=false;};
 {const go=()=>{const v=$('codeIn').value.trim().toLowerCase().replace(/[\s,]+/g,'+');const parts=v.split('+').filter(Boolean),ok=['aquas','tune','tune-off','apex','unranked'];
   if(!parts.length||!parts.every(x=>ok.includes(x))){$('codeMsg').textContent='Unknown code';return;}
   applyRankHash(parts.join('+'));if(typeof renderRankPanel==='function')renderRankPanel();renderSkins();applySettings(true);$('codeIn').value='';$('codeMsg').textContent='Applied';setTimeout(()=>$('codeMsg').textContent='',2000);};
