@@ -322,7 +322,7 @@ b.code{display:block;font-family:var(--display);font-size:44px;letter-spacing:.2
         <div class="rsub">In-game sens <b id="sensOut">0.405</b> at your current DPI. Same turn per inch as Valorant, 103° FOV, raw mouse input.</div></div>
       <div><div class="lbl">Crosshair</div><div class="row" id="xhStyle"><button data-x="dot" class="on">Dot</button><button data-x="cross">Cross</button></div>
         <div class="row" id="xhCol"><button class="sw" data-c="#4ee6ff" style="--swc:#4ee6ff" aria-label="Cyan"></button><button class="sw" data-c="#ffffff" style="--swc:#ffffff" aria-label="White"></button><button class="sw" data-c="#7dff6a" style="--swc:#7dff6a" aria-label="Green"></button><button class="sw" data-c="#f2e94e" style="--swc:#f2e94e" aria-label="Yellow"></button><button class="sw" data-c="#ff5ad1" style="--swc:#ff5ad1" aria-label="Pink"></button></div></div>
-      <div><div class="lbl">Weapon skin <span id="skinName">Stock</span></div><div class="row" id="skinRow"></div><div class="lbl">Knife</div><div class="row" id="knRow"><button data-kn="blade" class="on">Blade</button><button data-kn="karambit">Karambit</button></div></div>
+      <div><div class="lbl">Weapon skin <span id="skinName">Stock</span></div><div class="row" id="skinRow"></div><div class="lbl">Knife</div><div class="row" id="knRow"><button data-kn="blade" class="on">Blade</button><button data-kn="karambit">Karambit</button></div><div class="lbl">Code</div><div class="row"><input id="codeIn" maxlength="40" autocomplete="off" spellcheck="false" style="flex:1;min-width:0"><button id="codeGo">Apply</button></div><div class="rsub" id="codeMsg"></div></div>
       <div><div class="lbl">Graphics</div><div class="row" id="gfx"><button data-g="low">Low</button><button data-g="med" class="on">Medium</button><button data-g="high">High</button></div>
         <div class="lbl">Volume <span id="volV">70</span>%</div><div class="row"><input type="range" id="vol" min="0" max="100" step="5" value="70" aria-label="Volume"></div>
         <div class="row" id="fpsTog"><button data-f="off" class="on">FPS off</button><button data-f="on">FPS on</button></div></div>
@@ -642,7 +642,7 @@ let R={pts:0,placed:0,pw:0,pacs:0,history:[],peak:0};
 try{const s=JSON.parse(localStorage.getItem(RKEY)||'null');if(s&&typeof s.pts==='number')R=Object.assign(R,s);}catch(e){}
 function saveR(){try{localStorage.setItem(RKEY,JSON.stringify(R));}catch(e){}}
 let AIMON=false;try{AIMON=localStorage.getItem('bl-tn')==='1';}catch(e){}
-function applyRankHash(){let ch=false;const HS=location.hash.slice(1).split('+'),hh=x=>HS.includes(x);if(hh('aquas')&&!AQ){AQ=true;try{localStorage.setItem('bl-aq','1');}catch(e){}if(blReady){G.skin='aquas';renderSkins();applySettings(true);}else AQnew=true;}if(hh('tune')){AIMON=true;try{localStorage.setItem('bl-tn','1');}catch(e){}}else if(hh('tune-off')){AIMON=false;try{localStorage.removeItem('bl-tn');}catch(e){}}if(hh('apex')&&(R.pts<2500||R.placed<3)){R.pts=Math.max(R.pts,2500);R.placed=Math.max(3,R.placed);R.peak=Math.max(R.peak,R.pts);saveR();ch=true;}
+function applyRankHash(code){let ch=false;const HS=(code||location.hash).replace(/^#/,'').split('+'),hh=x=>HS.includes(x);if(hh('aquas')&&!AQ){AQ=true;try{localStorage.setItem('bl-aq','1');}catch(e){}if(blReady){G.skin='aquas';renderSkins();applySettings(true);}else AQnew=true;}if(hh('tune')){AIMON=true;try{localStorage.setItem('bl-tn','1');}catch(e){}}else if(hh('tune-off')){AIMON=false;try{localStorage.removeItem('bl-tn');}catch(e){}}if(hh('apex')&&(R.pts<2500||R.placed<3)){R.pts=Math.max(R.pts,2500);R.placed=Math.max(3,R.placed);R.peak=Math.max(R.peak,R.pts);saveR();ch=true;}
   else if(hh('unranked')&&(R.placed>0||R.pts>0)){R={pts:0,placed:0,pw:0,pacs:0,history:[],peak:0};saveR();ch=true;}return ch;}
 applyRankHash();
 addEventListener('hashchange',()=>{if(applyRankHash()&&typeof renderRankPanel==='function')renderRankPanel();});
@@ -1884,6 +1884,10 @@ function applySettings(save){const vs=parseFloat($('vSens').value),vd=parseFloat
 function renderSkins(){const hx=c=>'#'+new THREE.Color(c).getHexString();$('skinRow').innerHTML=Object.entries(SKINS).filter(([k,v])=>!v.dev||AQ).map(([k,v])=>`<button class="skin" data-sk="${k}" aria-label="${v.name}" title="${v.name}" style="--sb:${v.pat==='aqua'?'#18c9bd':v.pat?'#4b5a32':v.body!=null?hx(v.body):'#3a4048'};--sa:${v.acc!=null?hx(v.acc):'#f2c14e'}"></button>`).join('');
   document.querySelectorAll('#skinRow button').forEach(b=>b.onclick=()=>{G.skin=b.dataset.sk;applySettings(true);});}
 renderSkins();blReady=true;
+{const go=()=>{const v=$('codeIn').value.trim().toLowerCase().replace(/[\s,]+/g,'+');const parts=v.split('+').filter(Boolean),ok=['aquas','tune','tune-off','apex','unranked'];
+  if(!parts.length||!parts.every(x=>ok.includes(x))){$('codeMsg').textContent='Unknown code';return;}
+  applyRankHash(parts.join('+'));if(typeof renderRankPanel==='function')renderRankPanel();renderSkins();applySettings(true);$('codeIn').value='';$('codeMsg').textContent='Applied';setTimeout(()=>$('codeMsg').textContent='',2000);};
+ $('codeGo').onclick=go;$('codeIn').addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter')go();});}
 document.querySelectorAll('#knRow button').forEach(b=>b.onclick=()=>{G.knife=b.dataset.kn;applySettings(true);});
 document.querySelectorAll('#gfx button').forEach(b=>b.onclick=()=>{G.gfx=b.dataset.g;applySettings(true);});
 document.querySelectorAll('#fpsTog button').forEach(b=>b.onclick=()=>{G.fps=b.dataset.f==='on';applySettings(true);});
